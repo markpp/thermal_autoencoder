@@ -46,6 +46,6 @@ def create_decoder(hparams):
         nn.ReLU(True),
         # input (nfd) x 32 x 32
         nn.ConvTranspose2d(hparams.nfd, hparams.nc, 4, 2, 1, bias=False),
-        nn.Tanh()
+        nn.Sigmoid()
         # output (nc) x 64 x 64
     )

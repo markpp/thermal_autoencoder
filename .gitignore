@@ -2,3 +2,7 @@
 *.png
 *.npy
 logs/
+lightning_logs/
+data/
+output/
+*.pyc

@@ -22,7 +22,8 @@ class Autoencoder(pl.LightningModule):
         return x
 
     def configure_optimizers(self):
-        return Adam(self.parameters(), lr=self.hparams.lr, betas=(self.hparams.beta1, self.hparams.beta2))
+        #return Adam(self.parameters(), lr=self.hparams.lr, betas=(self.hparams.beta1, self.hparams.beta2))
+        return Adam(self.parameters(), lr=self.hparams.lr)
 
     def training_step(self, batch, batch_idx):
         x = batch

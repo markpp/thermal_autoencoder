@@ -8,21 +8,18 @@ from glob import glob
 import cv2
 
 
-class FromFolderDataset(torch.utils.data.Dataset):
-    def __init__(self, data_dir, crop_size=64):
-        self.crop_size = crop_size
-        self.image_files = [y for x in os.walk(data_dir) for y in glob(os.path.join(x[0], '*.png'))]
+class DatasetFromFolder(torch.utils.data.Dataset):
+    def __init__(self, image_dir):
+        self.image_files = [y for x in os.walk(image_dir) for y in glob(os.path.join(x[0], '*.jpg'))]
         if not len(self.image_files)>0:
             print("did not find any files")
 
     def load_sample(self, image_path):
-        img = cv2.imread(image_path, -1)
-        self.image_h, self.image_w = img.shape[:2]
+        img = cv2.imread(image_path, -1)[:,:,0]
         return img
 
     def __getitem__(self, idx):
         img = self.load_sample(self.image_files[idx])
-        #img = img.transpose((2, 0, 1))
         img = img / 255.0
         img = torch.from_numpy(img)
         img = img.float()
@@ -32,18 +29,48 @@ class FromFolderDataset(torch.utils.data.Dataset):
     def __len__(self):
         return len(self.image_files)
 
+class DatasetFromList(torch.utils.data.Dataset):
+    def __init__(self, image_list):
+
+        with open(image_list) as f:
+            self.image_files = f.read().splitlines()
+        if not len(self.image_files)>0:
+            print("did not find any files")
+
+    def load_sample(self, image_path):
+        img = cv2.imread(image_path, -1)[:,:,0]
+        return img
+
+    def __getitem__(self, idx):
+        img = self.load_sample(self.image_files[idx])
+        img = img / 255.0
+        img = torch.from_numpy(img)
+        img = img.float()
+        img = torch.unsqueeze(img, 0)
+        return img
+
+    def __len__(self):
+        return len(self.image_files)
 
 class HarbourDataModule(pl.LightningDataModule):
-    def __init__(self, data_dir, batch_size):
+    def __init__(self, image_dir=None, image_list=None, batch_size=64):
         super().__init__()
-        self.data_dir = data_dir
+        self.image_dir = image_dir
+        self.image_list = image_list
         self.batch_size = batch_size
 
+    #implement augmentation
+    
     #def prepare_data():
         #download, unzip here. anything that should not be done distributed
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
-            self.data = FromFolderDataset(self.data_dir)
+            if self.image_dir is not None:
+                self.data = DatasetFromFolder(self.image_dir)
+            elif self.image_list is not None:
+                self.data = DatasetFromList(self.image_list)
+            else:
+                print("no input provided!")
             n_sample = len(self.data)
             end_train_idx = int(n_sample * 0.9)
             self.data_train = Subset(self.data, range(0, end_train_idx))
