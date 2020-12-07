@@ -1,15 +1,21 @@
 # README #
 
-This repo lets you train a basic variational autoencoder.
+This repo lets you train a basic autoencoder and use it for anormaly detection.
 
 ### Overview ###
-
+* define_crop_region.py place the corner boxes of the ROI
 * extract_datasets.py extracts crops from a specific view point.
 * train.py trains and tests a model using the extracted crops.
 * embed.py lets load a model and output embeddings of the extracted crops.
 * plot_distribution.py
 
-### extract_datasets ###
+### prepare data ###
+
+There are two options. (1) using prepared data(crops) as done for the "Supervised Versus Self-supervised Assistant for Surveillance of Harbor Fronts" paper or (2) extract specific views and crops using "extract_datasets.py".
+
+To use pre-cropped data simply place the image files in data/[test,train].
+
+In you want to use "extract_datasets.py":
 
 * Choose view point "view" variable and determine whether the other options are correct.
 * Set flow=False if you want just the [intensity] otherwise crops are stored containing [intensity, flow_x, flow_y].

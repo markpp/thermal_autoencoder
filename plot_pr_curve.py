@@ -21,6 +21,7 @@ if __name__ == "__main__":
 
     data_type = 'test'
     datasets = ['{}_normal'.format(data_type),'{}_abnormal'.format(data_type)]
+    #datasets = ['{}_normal'.format(data_type),'{}_abnormal'.format(data_type),'{}_entering'.format(data_type)]
 
     losses, labels, names = np.array([]), np.array([]), np.array([])
 
@@ -36,7 +37,7 @@ if __name__ == "__main__":
         # find extreems
         indices = np.argsort(loss)
         file.write("{}\n".format(dataset))
-        print(indices[-3:])
+        #print(indices[-3:])
         for l, n in zip(loss[indices[:3]],name[indices[:3]]):
             file.write("loss {}, file {}\n".format(l, n))
         middle_idx = len(indices)//2
@@ -48,6 +49,8 @@ if __name__ == "__main__":
         x = np.random.random_sample(loss.shape[0])
         if 'abnormal' in dataset:
             plt.plot(x,loss,'.',color='r', label='Abnormal')
+        elif 'entering' in dataset:
+            plt.plot(x,loss,'.',color='b', label='entering')
         else:
             plt.plot(x,loss,'.',color='g', label='Normal')
 
@@ -57,7 +60,23 @@ if __name__ == "__main__":
 
     file.close()
 
-    plt.axhline(y=0.002127421321347356,color='r',linestyle='--')
+    y_score = losses
+    y_true = labels
+
+
+    from sklearn.metrics import precision_recall_curve
+    # calculate model precision-recall curve
+    precision, recall, thresholds = precision_recall_curve(y_true, y_score)
+
+    desired_recall = 0.8
+    idx = np.abs(recall - desired_recall).argmin()
+    threshold = thresholds[idx]
+    threshold = 0.0029042831156402826
+    print('threshold: {}'.format(threshold))
+    y_pred = np.where(y_score > threshold, 1, 0)
+
+
+    plt.axhline(y=threshold,color='r',linestyle='--')
 
     ax = plt.subplot(111)
     ax.get_xaxis().set_visible(False)
@@ -69,22 +88,10 @@ if __name__ == "__main__":
     plt.savefig(os.path.join('output','reconstruction_error_{}.png'.format(data_type)))
     plt.clf()
 
-    y_score = losses
-    y_true = labels
-
-
-    from sklearn.metrics import precision_recall_curve
-    # calculate model precision-recall curve
-    precision, recall, thresholds = precision_recall_curve(y_true, y_score)
-
-    idx = np.abs(recall - 0.5).argmin()
-    threshold = thresholds[idx]
-    print('threshold: {}'.format(threshold))
-    threshold = 0.002127421321347356
-    y_pred = np.where(y_score > threshold, 1, 0)
-
+    from sklearn import metrics
+    auc_pr = metrics.auc(recall, precision)
     # plot the model precision-recall curve
-    plt.plot(recall, precision, marker='.', label='PR curve')
+    plt.plot(recall, precision, marker='.', label='AUC: {}'.format(auc_pr))
 
     plt.axvline(x=recall[idx],color='r',linestyle='--')
 
@@ -102,12 +109,18 @@ if __name__ == "__main__":
 
     from sklearn.metrics import confusion_matrix
     cm = confusion_matrix(y_true, y_pred)
-    print(cm)
+
     tn, fp, fn, tp = cm.ravel()
-    res = "tn {}, fp {}, fn {}, tp {}".format(tn, fp, fn, tp)
+    res = "tn {}, fp {}, fn {}, tp {}\n".format(tn, fp, fn, tp)
     print(res)
+    precision = tp / (tp+fp) 
+    recall = tp / (tp+fn)
+    pr = "recall: {:.3f}, precision: {:.3f}".format(recall,precision)
+    print(pr)
     file = open(os.path.join('output','results_{}.txt'.format(data_type)),"w")
+    file.write("threshold: {}\n".format(threshold))
     file.write(res)
+    file.write(pr)
     file.close()
 
     cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]

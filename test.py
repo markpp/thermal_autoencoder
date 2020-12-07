@@ -30,7 +30,9 @@ def play_thermal(frame_list, hparams, output_dir, encoder=None, decoder=None, no
     inputs, recs, files, losses, latent = [], [], [], [], []
     print(len(frame_list))
     for i, frame_path in enumerate(frame_list):
-        crop = cv2.imread(frame_path)[:,:,0] #[:,:,:1]
+        crop = cv2.imread(frame_path, -1)#[:,:,0] #[:,:,:1]
+        #crop = cv2.resize(crop, (64,192), interpolation=cv2.INTER_LINEAR)
+
         inputs.append(crop)
         files.append(frame_path)
         img = crop / 255.0
@@ -71,14 +73,14 @@ def test(hparams):
 
     model = Autoencoder(hparams)
 
-    model.encoder = torch.load("trained_models/encoder.pt")
-    model.decoder = torch.load("trained_models/decoder.pt")
+    model.encoder = torch.load("trained_models/train_all/encoder.pt")
+    model.decoder = torch.load("trained_models/train_all/decoder.pt")
 
-    print(model)
+    #print(model)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     model = model.to(device)
-    from torchsummary import summary
-    summary(model, (1, 64, 192))
+    #from torchsummary import summary
+    #summary(model, (1, 64, 192))
 
     model.encoder.eval()
     model.decoder.eval()
@@ -94,7 +96,7 @@ def test(hparams):
 
 if __name__ == "__main__":
     parser = ArgumentParser()
-    parser.add_argument("--image_list", type=str, default="data/test_abnormal.txt", help="View root directory")
+    parser.add_argument("--image_list", type=str, default="output/test_normal.txt", help="View root directory")
     parser.add_argument("--nc", type=int, default=1, help="Number of channels in the training images")
     parser.add_argument("--norm", type=int, default=0, help="Normalize or not")
     parser.add_argument("--nz", type=int, default=8, help="Size of latent vector z")

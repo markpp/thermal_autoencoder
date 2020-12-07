@@ -38,7 +38,8 @@ class DatasetFromList(torch.utils.data.Dataset):
             print("did not find any files")
 
     def load_sample(self, image_path):
-        img = cv2.imread(image_path, -1)[:,:,0]
+        img = cv2.imread(image_path, -1)#[:,:,0]
+        #img = cv2.resize(img, (64,192), interpolation=cv2.INTER_LINEAR)
         return img
 
     def __getitem__(self, idx):
@@ -53,28 +54,29 @@ class DatasetFromList(torch.utils.data.Dataset):
         return len(self.image_files)
 
 class HarbourDataModule(pl.LightningDataModule):
-    def __init__(self, image_dir=None, image_list=None, batch_size=64):
+    def __init__(self, image_dir=None, image_lists=None, batch_size=64):
         super().__init__()
         self.image_dir = image_dir
-        self.image_list = image_list
+        self.image_lists = image_lists
         self.batch_size = batch_size
 
     #implement augmentation
-    
+
     #def prepare_data():
         #download, unzip here. anything that should not be done distributed
     def setup(self, stage=None):
         if stage == 'fit' or stage is None:
             if self.image_dir is not None:
                 self.data = DatasetFromFolder(self.image_dir)
-            elif self.image_list is not None:
-                self.data = DatasetFromList(self.image_list)
+            elif self.image_lists is not None:
+                self.data_train = DatasetFromList(self.image_lists[0])
+                self.data_val = DatasetFromList(self.image_lists[1])
             else:
                 print("no input provided!")
-            n_sample = len(self.data)
-            end_train_idx = int(n_sample * 0.9)
-            self.data_train = Subset(self.data, range(0, end_train_idx))
-            self.data_val = Subset(self.data, range(end_train_idx + 1, n_sample))
+            #n_sample = len(self.data)
+            #end_train_idx = int(n_sample * 0.9)
+            #self.data_train = Subset(self.data, range(0, end_train_idx))
+            #self.data_val = Subset(self.data, range(end_train_idx + 1, n_sample))
 
     def train_dataloader(self):
         return DataLoader(self.data_train, batch_size=self.batch_size, shuffle=True)
